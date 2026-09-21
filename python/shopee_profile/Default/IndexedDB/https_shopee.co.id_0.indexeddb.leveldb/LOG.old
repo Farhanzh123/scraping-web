@@ -1,12 +1,3 @@
-2026/09/07-11:35:35.390 caff Reusing MANIFEST /home/farhanzaizhanafi/laravelxpython/python/shopee_profile/Default/IndexedDB/https_shopee.co.id_0.indexeddb.leveldb/MANIFEST-000001
-2026/09/07-11:35:35.390 caff Recovering log #20
-2026/09/07-11:35:35.409 caff Reusing old log /home/farhanzaizhanafi/laravelxpython/python/shopee_profile/Default/IndexedDB/https_shopee.co.id_0.indexeddb.leveldb/000020.log 
-2026/09/07-11:38:46.691 cb02 Level-0 table #25: started
-2026/09/07-11:38:46.708 cb02 Level-0 table #25: 1947424 bytes OK
-2026/09/07-11:38:46.711 cb02 Delete type=0 #20
-2026/09/07-11:39:02.075 cb00 Compacting 1@1 + 1@2 files
-2026/09/07-11:39:02.082 cb00 Generated table #26@1: 558 keys, 60917 bytes
-2026/09/07-11:39:02.082 cb00 Compacted 1@1 + 1@2 files => 60917 bytes
-2026/09/07-11:39:02.084 cb00 compacted to: files[ 0 0 1 0 0 0 0 ]
-2026/09/07-11:39:02.084 cb00 Delete type=2 #22
-2026/09/07-11:39:02.084 cb00 Delete type=2 #25
+2026/09/19-22:15:51.796 1bfd Reusing MANIFEST /home/farhanzaizhanafi/laravelxpython/python/shopee_profile/Default/IndexedDB/https_shopee.co.id_0.indexeddb.leveldb/MANIFEST-000001
+2026/09/19-22:15:51.797 1bfd Recovering log #6
+2026/09/19-22:15:51.802 1bfd Reusing old log /home/farhanzaizhanafi/laravelxpython/python/shopee_profile/Default/IndexedDB/https_shopee.co.id_0.indexeddb.leveldb/000006.log 
