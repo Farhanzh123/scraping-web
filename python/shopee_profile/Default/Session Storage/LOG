@@ -1,3 +1,2 @@
-2026/09/19-22:15:43.685 5 Reusing MANIFEST /home/farhanzaizhanafi/laravelxpython/python/shopee_profile/Default/Session Storage/MANIFEST-000001
-2026/09/19-22:15:43.687 5 Recovering log #3
-2026/09/19-22:15:43.687 5 Reusing old log /home/farhanzaizhanafi/laravelxpython/python/shopee_profile/Default/Session Storage/000003.log 
+2026/09/26-20:42:26.894 5 Creating DB /home/farhanzaizhanafi/laravelxpython/python/shopee_profile/Default/Session Storage since it was missing.
+2026/09/26-20:42:26.898 5 Reusing MANIFEST /home/farhanzaizhanafi/laravelxpython/python/shopee_profile/Default/Session Storage/MANIFEST-000001

@@ -12,6 +12,10 @@ class ProductScrapeController extends Controller
 {
     public function scrape(Request $request): JsonResponse
     {
+        // 1. Hilangkan batas waktu eksekusi PHP agar tidak timeout
+        set_time_limit(0);
+        ini_set('max_execution_time', '0');
+
         $validated = $request->validate([
             'keyword' => 'required|string|max:255',
             'limit' => 'nullable|integer|min:1|max:20',
@@ -20,16 +24,22 @@ class ProductScrapeController extends Controller
         $keyword = $validated['keyword'];
         $limit = $validated['limit'] ?? 5;
 
-        RunShopeeScrape::dispatch($keyword, $limit);
+        // 2. Jalankan Job secara Synchronous (ditunggu hingga selesai)
+        RunShopeeScrape::dispatchSync($keyword, $limit);
 
+        // 3. Ambil data hasil scraping terbaru berdasarkan keyword
+        $scrapedData = ProductScrape::where('keyword', $keyword)
+            ->latest()
+            ->take($limit)
+            ->get();
+
+        // 4. Kembalikan response 200 OK bersama data scraping
         return response()->json([
             'status' => 'success',
-            'message' => 'Proses scraping telah ditambahkan ke antrean (background job).',
-            'data' => [
-                'keyword' => $keyword,
-                'limit' => $limit,
-            ]
-        ], 202);
+            'message' => 'Scraping berhasil diselesaikan.',
+            'total' => $scrapedData->count(),
+            'data' => $scrapedData
+        ], 200);
     }
 
     public function index(Request $request): JsonResponse

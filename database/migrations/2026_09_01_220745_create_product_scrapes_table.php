@@ -10,16 +10,20 @@ return new class extends Migration
     {
         Schema::create('product_scrapes', function (Blueprint $table) {
             $table->id();
-            $table->string('keyword');
-            $table->bigInteger('item_id');
-            $table->bigInteger('shop_id');
+            $table->string('keyword')->index();
+            $table->string('item_id'); // Menggunakan string untuk menghindari batas nilai integer
+            $table->string('shop_id');
             $table->string('judul');
-            $table->decimal('harga', 15, 2);
+            $table->text('image_url')->nullable();
+            $table->json('spesifikasi')->nullable();
+            $table->decimal('harga', 15, 2)->default(0);
+            $table->bigInteger('terjual')->default(0);
             $table->float('rating_produk')->default(0);
             $table->integer('total_ulasan_produk')->default(0);
-            $table->string('toko');
+            $table->string('toko')->nullable();
             $table->float('rating_toko')->default(0);
             $table->integer('total_ulasan_toko')->default(0);
+            $table->text('deskripsi')->nullable();
             $table->text('url_asli');
             $table->text('url_afiliasi')->nullable();
             $table->timestamps();

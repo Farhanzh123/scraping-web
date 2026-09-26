@@ -3,74 +3,92 @@
 namespace App\Jobs;
 
 use App\Models\ProductScrape;
-use App\Models\ShopeeAccount;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Symfony\Component\Process\Process;
-use Symfony\Component\Process\Exception\ProcessFailedException;
 use Illuminate\Support\Facades\Log;
+use Symfony\Component\Process\Process;
 
 class RunShopeeScrape implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $timeout = 300;
+    public $timeout = 300;
+
     protected string $keyword;
     protected int $limit;
 
+    /**
+     * Create a new job instance.
+     */
     public function __construct(string $keyword, int $limit = 5)
     {
         $this->keyword = $keyword;
         $this->limit = $limit;
     }
 
+    /**
+     * Execute the job.
+     */
     public function handle(): void
     {
-        $account = ShopeeAccount::where('username', 'default_account')->first();
-        $cookiesJson = $account ? $account->cookies_json : '[]';
+        $pythonBinary = '/usr/bin/python3';
+        // Disesuaikan dengan nama file Python Anda: shopee_scrape.py
+        $scriptPath = base_path('python/shopee_scraper.py');
 
-        $pythonScriptPath = base_path('python/shopee_scraper.py');
-        $pythonBinary = '/usr/bin/python3'; // Pastikan path python ini sesuai
+        $process = new Process([
+            $pythonBinary,
+            $scriptPath,
+            $this->keyword,
+            (string) $this->limit
+        ]);
 
-        $process = new Process([$pythonBinary, $pythonScriptPath, $this->keyword, $this->limit, $cookiesJson]);
-        $process->setTimeout(240);
+        $process->setTimeout($this->timeout);
         $process->run();
 
         if (!$process->isSuccessful()) {
-            Log::error('ShopeeScrape Error: ' . $process->getErrorOutput());
-            throw new ProcessFailedException($process);
+            Log::error('Shopee Scraping Job Failed: ' . $process->getErrorOutput());
+            return;
         }
 
-        $output = trim($process->getOutput());
-        
-        // Cek mentahan output python di storage/logs/laravel.log
-        Log::info('ShopeeScrape Raw Output: ' . $output);
+        $rawOutput = trim($process->getOutput());
+        $products = json_decode($rawOutput, true);
 
-        $products = json_decode($output, true);
+        if (!is_array($products) || empty($products)) {
+            Log::warning('Shopee Scraping: Tidak ada data produk yang ditemukan/dikembalikan.');
+            return;
+        }
 
-        if (is_array($products) && count($products) > 0) {
-            foreach ($products as $item) {
-                ProductScrape::create([
+        foreach ($products as $item) {
+            $spesifikasiData = $item['spesifikasi'] ?? [];
+            $spesifikasiJson = is_string($spesifikasiData) ? $spesifikasiData : json_encode($spesifikasiData);
+
+            ProductScrape::updateOrCreate(
+                [
+                    'item_id' => (string) $item['item_id'],
+                    'shop_id' => (string) $item['shop_id'],
+                ],
+                [
                     'keyword'              => $this->keyword,
-                    'item_id'              => $item['item_id'] ?? null,
-                    'shop_id'              => $item['shop_id'] ?? null,
                     'judul'                => $item['judul'] ?? 'Tanpa Judul',
-                    'harga'                => $item['harga'] ?? 0,
-                    'rating_produk'        => $item['rating_produk'] ?? 0,
-                    'total_ulasan_produk'  => $item['total_ulasan_produk'] ?? 0,
+                    'image_url'            => !empty($item['image_url']) ? $item['image_url'] : null,
+                    'spesifikasi'          => $spesifikasiJson,
+                    'harga'                => (int) ($item['harga'] ?? 0),
+                    'terjual'              => (int) ($item['terjual'] ?? 0),
+                    'rating_produk'        => (float) ($item['rating_produk'] ?? 0),
+                    'total_ulasan_produk'  => (int) ($item['total_ulasan_produk'] ?? 0),
                     'toko'                 => $item['toko'] ?? '-',
-                    'rating_toko'          => $item['rating_toko'] ?? 0,
-                    'total_ulasan_toko'    => $item['total_ulasan_toko'] ?? 0,
+                    'rating_toko'          => (float) ($item['rating_toko'] ?? 0),
+                    'total_ulasan_toko'    => (int) ($item['total_ulasan_toko'] ?? 0),
+                    'deskripsi'            => !empty($item['deskripsi']) ? $item['deskripsi'] : null,
                     'url_asli'             => $item['url_asli'] ?? '',
                     'url_afiliasi'         => $item['url_afiliasi'] ?? null,
-                ]);
-            }
-            Log::info('Berhasil menyimpan ' . count($products) . ' produk ke database.');
-        } else {
-            Log::warning('ShopeeScrape: Output JSON kosong atau bukan array valid.');
+                ]
+            );
         }
+
+        Log::info("Shopee Scraping Success: Berhasil menyimpan " . count($products) . " produk untuk keyword '{$this->keyword}'.");
     }
 }

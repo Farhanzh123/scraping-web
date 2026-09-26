@@ -11,6 +11,9 @@ use Symfony\Component\Process\Process;
 
 class ShopeeController extends Controller
 {
+    /**
+     * Menampilkan halaman utama manajemen scraping Shopee
+     */
     public function index()
     {
         $sessionStatus = ShopeeSessionStatus::firstOrCreate(
@@ -22,20 +25,27 @@ class ShopeeController extends Controller
                 'affiliate_logged_in' => false,
                 'auto_check_enabled' => false,
                 'interval_days' => 1,
-            ],
+            ]
         );
 
         $products = ProductScrape::latest()->paginate(10);
+        
         return view('shopee', compact('products', 'sessionStatus'));
     }
 
+    /**
+     * Membuka instance Chrome via Selenium / Background Job
+     */
     public function launchChrome()
     {
         RunShopeeLogin::dispatch();
 
-        return back()->with('success', 'buka chrome');
+        return back()->with('success', 'Proses membuka Chrome telah dijadwalkan.');
     }
 
+    /**
+     * Mentrigger proses scraping berdasarkan keyword dan limit
+     */
     public function triggerScrape(Request $request)
     {
         $request->validate([
@@ -43,12 +53,14 @@ class ShopeeController extends Controller
             'limit' => 'required|integer|min:1|max:50',
         ]);
 
-        RunShopeeScrape::dispatch($request->keyword, $request->limit);
+        RunShopeeScrape::dispatch($request->keyword, (int)$request->limit);
 
         return back()->with('success', 'Proses scraping untuk keyword "' . $request->keyword . '" telah dijadwalkan.');
     }
 
-    // 1. Menjalankan Python check_session.py tanpa langsung menimpa DB
+    /**
+     * Memeriksa status sesi Chrome & Login Affiliate via script Python
+     */
     public function checkSession()
     {
         $pythonBinary = '/usr/bin/python3';
@@ -65,11 +77,12 @@ class ShopeeController extends Controller
                     'message' => 'Gagal menjalankan script pengecekan sesi.',
                     'error' => $process->getErrorOutput(),
                 ],
-                500,
+                500
             );
         }
 
-        $output = json_decode($process->getOutput(), true);
+        $rawOutput = trim($process->getOutput());
+        $output = json_decode($rawOutput, true);
 
         return response()->json([
             'success' => true,
@@ -82,7 +95,9 @@ class ShopeeController extends Controller
         ]);
     }
 
-    // 2. Menyimpan/Meng-update data ke DB (updateOrCreate pada ID=1)
+    /**
+     * Menyimpan hasil status sesi yang diperbarui ke database
+     */
     public function saveSession(Request $request)
     {
         $request->validate([
@@ -100,7 +115,7 @@ class ShopeeController extends Controller
                 'chrome_connected' => $request->chrome_connected,
                 'affiliate_logged_in' => $request->affiliate_logged_in,
                 'last_checked_at' => now(),
-            ],
+            ]
         );
 
         return response()->json([
@@ -112,6 +127,9 @@ class ShopeeController extends Controller
         ]);
     }
 
+    /**
+     * Memperbarui pengaturan pengecekan otomatis
+     */
     public function updateSettings(Request $request)
     {
         $request->validate([
@@ -120,11 +138,17 @@ class ShopeeController extends Controller
         ]);
 
         $status = ShopeeSessionStatus::find(1);
-        $status->update([
-            'auto_check_enabled' => $request->auto_check_enabled,
-            'interval_days' => $request->interval_days,
-        ]);
+        
+        if ($status) {
+            $status->update([
+                'auto_check_enabled' => $request->auto_check_enabled,
+                'interval_days' => $request->interval_days,
+            ]);
+        }
 
-        return response()->json(['success' => true, 'message' => 'Pengaturan disimpan.']);
+        return response()->json([
+            'success' => true, 
+            'message' => 'Pengaturan berhasil disimpan.'
+        ]);
     }
 }

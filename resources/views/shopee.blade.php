@@ -9,8 +9,8 @@
     <!-- Alpine.js (CDN) -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body class="bg-slate-100 text-slate-800 font-sans p-6">
-    <div class="max-w-5xl mx-auto space-y-6">
+<body class="bg-slate-100 text-slate-800 font-sans p-6" x-data="{ selectedProduct: null }">
+    <div class="max-w-6xl mx-auto space-y-6">
         
         <h1 class="text-2xl font-bold text-slate-800">Shopee Scraping & Affiliate Dashboard</h1>
 
@@ -36,7 +36,6 @@
             <div class="border-b border-slate-100 pb-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                 <h2 class="text-lg font-semibold text-slate-700">1. Status Sesi & Health Check Browser</h2>
                 
-                <!-- Pengaturan Auto-Check -->
                 <div class="flex items-center gap-3 text-xs text-slate-600 bg-slate-50 p-2 rounded-lg border border-slate-200">
                     <label class="flex items-center gap-1.5 cursor-pointer font-medium">
                         <input 
@@ -68,8 +67,6 @@
                 <div class="space-y-1">
                     <div class="flex items-center gap-3">
                         <span class="font-semibold text-sm text-slate-700">Status Sesi Login:</span>
-                        
-                        <!-- Badge Dynamic -->
                         <span 
                             x-text="statusBadge.text" 
                             :class="statusBadge.colorClass"
@@ -82,9 +79,7 @@
                     </p>
                 </div>
 
-                {{-- WADAH 2 TOMBOL --}}
                 <div class="flex items-center gap-2">
-                    <!-- Tombol 1: Cek & Siapkan Data -->
                     <button 
                         @click="checkSession()" 
                         :disabled="isChecking || isSaving"
@@ -95,7 +90,6 @@
                         <span x-text="isChecking ? 'Memeriksa...' : 'Cek Sesi Manual'"></span>
                     </button>
 
-                    <!-- Tombol 2: Simpan ke DB (Aktif setelah berhasil cek) -->
                     <button 
                         @click="saveToDatabase()" 
                         :disabled="!hasCheckedResult || isChecking || isSaving"
@@ -109,7 +103,7 @@
             </div>
         </div>
 
-        {{-- 2. Card Trigger Login / Launch Chrome --}}
+        {{-- 2. Card Trigger Login --}}
         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
             <h2 class="text-lg font-semibold text-slate-700 border-b border-slate-100 pb-3">2. Peluncuran Browser Chrome (Port 9222)</h2>
             <form action="{{ route('shopee.login') }}" method="POST">
@@ -149,7 +143,7 @@
             </form>
         </div>
 
-        {{-- 4. Tabel Hasil Scraping --}}
+        {{-- 4. Tabel Hasil Scraping Lengkap --}}
         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
             <h2 class="text-lg font-semibold text-slate-700 border-b border-slate-100 pb-3">Hasil Scraping Terbaru</h2>
             
@@ -157,29 +151,75 @@
                 <table class="w-full text-left text-sm border-collapse">
                     <thead>
                         <tr class="bg-slate-50 text-slate-600 border-b border-slate-200">
-                            <th class="p-3 font-semibold w-1/3">Judul Produk</th>
+                            <th class="p-3 font-semibold">Produk</th>
                             <th class="p-3 font-semibold">Harga</th>
-                            <th class="p-3 font-semibold">Rating</th>
-                            <th class="p-3 font-semibold">Toko</th>
-                            <th class="p-3 font-semibold w-1/5">Link Afiliasi</th>
+                            <th class="p-3 font-semibold">Terjual</th>
+                            <th class="p-3 font-semibold">Rating Produk</th>
+                            <th class="p-3 font-semibold">Info Toko</th>
+                            <th class="p-3 font-semibold">Aksi / Afiliasi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
                         @forelse($products as $p)
+                            @php
+                                $specs = is_string($p->spesifikasi) ? json_decode($p->spesifikasi, true) : ($p->spesifikasi ?? []);
+                            @endphp
                             <tr class="hover:bg-slate-50">
+                                {{-- Kolom Gambardan Judul --}}
                                 <td class="p-3">
-                                    <a href="{{ $p->url_asli ?? '#' }}" target="_blank" class="text-blue-600 hover:underline font-medium">
-                                        {{ $p->judul ?? $p->title ?? 'Produk' }}
-                                    </a>
+                                    <div class="flex items-start gap-3">
+                                        @if(!empty($p->image_url))
+                                            <img src="{{ $p->image_url }}" alt="Thumbnail" class="w-12 h-12 object-cover rounded border border-slate-200 shrink-0">
+                                        @else
+                                            <div class="w-12 h-12 bg-slate-100 border rounded flex items-center justify-center text-slate-400 text-xs shrink-0">No Img</div>
+                                        @endif
+                                        <div class="space-y-1">
+                                            <a href="{{ $p->url_asli ?? '#' }}" target="_blank" class="text-blue-600 hover:underline font-medium line-clamp-2 leading-snug">
+                                                {{ $p->judul ?? 'Produk' }}
+                                            </a>
+                                            <button 
+                                                type="button"
+                                                @click='selectedProduct = @json($p)'
+                                                class="text-[11px] text-indigo-600 font-semibold hover:underline flex items-center gap-1"
+                                            >
+                                                <span>📋 Lihat Spesifikasi & Detail</span>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </td>
-                                <td class="p-3 whitespace-nowrap">Rp {{ number_format($p->harga ?? $p->price ?? 0, 0, ',', '.') }}</td>
-                                <td class="p-3 whitespace-nowrap">
-                                    ⭐ {{ $p->rating_produk ?? $p->rating ?? '-' }}
+
+                                {{-- Kolom Harga --}}
+                                <td class="p-3 whitespace-nowrap font-semibold text-slate-800">
+                                    Rp {{ number_format($p->harga ?? 0, 0, ',', '.') }}
                                 </td>
-                                <td class="p-3 whitespace-nowrap">{{ $p->toko ?? $p->shop_name ?? '-' }}</td>
+
+                                {{-- Kolom Terjual --}}
+                                <td class="p-3 whitespace-nowrap text-slate-600">
+                                    {{ number_format($p->terjual ?? 0, 0, ',', '.') }} unit
+                                </td>
+
+                                {{-- Kolom Rating Produk --}}
                                 <td class="p-3 whitespace-nowrap">
-                                    @if($p->url_afiliasi ?? $p->affiliate_url ?? false)
-                                        <a href="{{ $p->url_afiliasi ?? $p->affiliate_url }}" target="_blank" class="px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded text-xs font-semibold hover:bg-emerald-200 transition inline-block">
+                                    <div class="flex items-center gap-1">
+                                        <span class="text-amber-500 font-bold">⭐ {{ number_format($p->rating_produk ?? 0, 1) }}</span>
+                                    </div>
+                                    <div class="text-[11px] text-slate-400">
+                                        ({{ number_format($p->total_ulasan_produk ?? 0, 0, ',', '.') }} ulasan)
+                                    </div>
+                                </td>
+
+                                {{-- Kolom Toko --}}
+                                <td class="p-3 whitespace-nowrap">
+                                    <div class="font-medium text-slate-700">{{ $p->toko ?? '-' }}</div>
+                                    <div class="text-[11px] text-slate-500">
+                                        ⭐ {{ number_format($p->rating_toko ?? 0, 1) }} | {{ number_format($p->total_ulasan_toko ?? 0, 0, ',', '.') }} ulasan
+                                    </div>
+                                </td>
+
+                                {{-- Kolom Afiliasi --}}
+                                <td class="p-3 whitespace-nowrap">
+                                    @if(!empty($p->url_afiliasi))
+                                        <a href="{{ $p->url_afiliasi }}" target="_blank" class="px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-semibold hover:bg-emerald-200 transition inline-flex items-center gap-1">
                                             🔗 Link Afiliasi
                                         </a>
                                     @else
@@ -191,7 +231,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="p-6 text-center text-slate-400">
+                                <td colspan="6" class="p-6 text-center text-slate-400">
                                     Belum ada data produk yang di-scrape.
                                 </td>
                             </tr>
@@ -205,9 +245,65 @@
             </div>
         </div>
 
+        {{-- MODAL DETAIL SPESIFIKASI PRODUK (Alpine.js) --}}
+        <div 
+            x-show="selectedProduct" 
+            x-cloak
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            @keydown.escape.window="selectedProduct = null"
+        >
+            <div 
+                @click.away="selectedProduct = null"
+                class="bg-white max-w-2xl w-full rounded-xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
+                <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                    <h3 class="font-bold text-slate-800 line-clamp-1" x-text="selectedProduct?.judul"></h3>
+                    <button @click="selectedProduct = null" class="text-slate-400 hover:text-slate-600 font-bold text-lg">&times;</button>
+                </div>
+
+                <div class="p-6 overflow-y-auto space-y-4 text-sm">
+                    <div class="flex gap-4">
+                        <template x-if="selectedProduct?.image_url">
+                            <img :src="selectedProduct?.image_url" class="w-24 h-24 object-cover rounded-lg border">
+                        </template>
+                        <div class="space-y-1">
+                            <p class="text-lg font-bold text-emerald-600" x-text="'Rp ' + Number(selectedProduct?.harga || 0).toLocaleString('id-ID')"></p>
+                            <p class="text-slate-500" x-text="'Toko: ' + (selectedProduct?.toko || '-')"></p>
+                            <p class="text-slate-500" x-text="'Terjual: ' + Number(selectedProduct?.terjual || 0).toLocaleString('id-ID') + ' unit'"></p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="font-semibold text-slate-700 border-b pb-1 mb-2">Spesifikasi Produk:</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <template x-if="selectedProduct?.spesifikasi">
+                                <template x-for="(attr, idx) in (typeof selectedProduct.spesifikasi === 'string' ? JSON.parse(selectedProduct.spesifikasi) : selectedProduct.spesifikasi)" :key="idx">
+                                    <div class="bg-slate-50 p-2 rounded border border-slate-100 text-xs">
+                                        <span class="font-semibold text-slate-600" x-text="attr.name + ': '"></span>
+                                        <span class="text-slate-800" x-text="attr.value"></span>
+                                    </div>
+                                </template>
+                            </template>
+                        </div>
+                    </div>
+
+                    <template x-if="selectedProduct?.deskripsi">
+                        <div>
+                            <h4 class="font-semibold text-slate-700 border-b pb-1 mb-1">Deskripsi:</h4>
+                            <p class="text-slate-600 text-xs whitespace-pre-line leading-relaxed" x-text="selectedProduct?.deskripsi"></p>
+                        </div>
+                    </template>
+                </div>
+
+                <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+                    <button @click="selectedProduct = null" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-medium text-xs">Tutup</button>
+                </div>
+            </div>
+        </div>
+
     </div>
 
-    <!-- Script Alpine.js -->
+    <!-- Script Alpine.js Manager Sesi -->
     <script>
     function sessionManager() {
         return {
@@ -238,7 +334,6 @@
                 }
             },
 
-            // 1. Eksekusi Tombol Cek Sesi Manual (Jalankan Python)
             checkSession() {
                 this.isChecking = true;
                 this.hasCheckedResult = false;
@@ -261,7 +356,7 @@
                         this.chromeConnected = res.data.chrome_connected;
                         this.affiliateLoggedIn = res.data.affiliate_logged_in;
                         
-                        this.hasCheckedResult = true; // Aktifkan tombol "Simpan ke DB"
+                        this.hasCheckedResult = true;
                     } else {
                         this.sessionState = 'disconnected';
                         this.statusMessage = res.message || 'Gagal mengeksekusi script Python.';
@@ -274,7 +369,6 @@
                 });
             },
 
-            // 2. Eksekusi Tombol Simpan ke DB
             saveToDatabase() {
                 if (!this.hasCheckedResult) return;
 
@@ -300,7 +394,7 @@
                     if (res.success) {
                         this.statusMessage = res.message;
                         this.lastCheckedAt = res.data.last_checked_at;
-                        this.hasCheckedResult = false; // Nonaktifkan tombol simpan karena sudah sinkron
+                        this.hasCheckedResult = false;
                     }
                 })
                 .catch(err => {

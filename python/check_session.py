@@ -7,7 +7,13 @@ from selenium.webdriver.chrome.options import Options
 
 def check_shopee_session():
     options = Options()
+    # 1. Hubungkan ke Chrome Port 9222 jika sudah berjalan
     options.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
+    
+    # 2. Tambahkan opsi agar tidak crash saat di-trigger via Ngrok / Background Process
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--remote-debugging-address=0.0.0.0")
 
     status = {
         "chrome_connected": False,

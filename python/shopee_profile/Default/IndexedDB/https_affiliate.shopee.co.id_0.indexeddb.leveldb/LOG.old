@@ -1,15 +1,3 @@
-2026/09/19-22:39:43.164 1c00 Reusing MANIFEST /home/farhanzaizhanafi/laravelxpython/python/shopee_profile/Default/IndexedDB/https_affiliate.shopee.co.id_0.indexeddb.leveldb/MANIFEST-000001
-2026/09/19-22:39:43.164 1c00 Recovering log #7
-2026/09/19-22:39:43.168 1c00 Reusing old log /home/farhanzaizhanafi/laravelxpython/python/shopee_profile/Default/IndexedDB/https_affiliate.shopee.co.id_0.indexeddb.leveldb/000007.log 
-2026/09/19-22:40:30.355 1bfd Level-0 table #9: started
-2026/09/19-22:40:30.357 1bfd Level-0 table #9: 68530 bytes OK
-2026/09/19-22:40:30.359 1bfd Delete type=0 #7
-2026/09/19-22:40:30.359 1bfd Manual compaction at level-0 from (begin) .. (end); will stop at (end)
-2026/09/19-22:40:30.359 1bfd Manual compaction at level-1 from (begin) .. (end); will stop at '\x00\x03\x01 \x03\x00 \x18-\xa5\x0bzB\x00\x01@\x00a\x00f\x00f\x00i\x00l\x00i\x00a\x00t\x00e\x00-\x00i\x00m\x00a\x00g\x00e\x00|\x00h\x00t\x00t\x00p\x00s\x00:\x00/\x00/\x00a\x00f\x00f\x00i\x00l\x00i\x00a\x00t\x00e\x00.\x00s\x00h\x00o\x00p\x00e\x00e\x00.\x00c\x00o\x00.\x00i\x00d\x00/\x00o\x00f\x00f\x00e\x00r\x00/\x00f\x00a\x00v\x00i\x00c\x00o\x00n\x00.\x00p\x00n\x00g' @ 15276 : 1
-2026/09/19-22:40:30.359 1bfd Compacting 1@1 + 1@2 files
-2026/09/19-22:40:30.366 1bfd Generated table #10@1: 154 keys, 4264 bytes
-2026/09/19-22:40:30.367 1bfd Compacted 1@1 + 1@2 files => 4264 bytes
-2026/09/19-22:40:30.368 1bfd compacted to: files[ 0 0 1 0 0 0 0 ]
-2026/09/19-22:40:30.369 1bfd Delete type=2 #5
-2026/09/19-22:40:30.369 1bfd Delete type=2 #9
-2026/09/19-22:40:30.369 1bfd Manual compaction at level-1 from '\x00\x03\x01 \x03\x00 \x18-\xa5\x0bzB\x00\x01@\x00a\x00f\x00f\x00i\x00l\x00i\x00a\x00t\x00e\x00-\x00i\x00m\x00a\x00g\x00e\x00|\x00h\x00t\x00t\x00p\x00s\x00:\x00/\x00/\x00a\x00f\x00f\x00i\x00l\x00i\x00a\x00t\x00e\x00.\x00s\x00h\x00o\x00p\x00e\x00e\x00.\x00c\x00o\x00.\x00i\x00d\x00/\x00o\x00f\x00f\x00e\x00r\x00/\x00f\x00a\x00v\x00i\x00c\x00o\x00n\x00.\x00p\x00n\x00g' @ 15276 : 1 .. (end); will stop at (end)
+2026/09/25-22:31:15.977 eb11 Reusing MANIFEST /home/farhanzaizhanafi/laravelxpython/python/shopee_profile/Default/IndexedDB/https_affiliate.shopee.co.id_0.indexeddb.leveldb/MANIFEST-000001
+2026/09/25-22:31:15.977 eb11 Recovering log #16
+2026/09/25-22:31:16.055 eb11 Reusing old log /home/farhanzaizhanafi/laravelxpython/python/shopee_profile/Default/IndexedDB/https_affiliate.shopee.co.id_0.indexeddb.leveldb/000016.log 
