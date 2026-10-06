@@ -156,23 +156,28 @@ import sys
 import json
 import time
 import urllib.parse
-import re
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 
-def generate_shopee_url(judul, shop_id, item_id):
-    """
-    Membuat URL Produk Shopee berdasarkan Slug, Shop ID, dan Item ID
-    """
-    slug = judul.lower()
-    slug = re.sub(r'[^a-z0-9\s-]', '', slug)
-    slug = re.sub(r'[\s-]+', '-', slug).strip('-')
-    return f"https://shopee.co.id/{slug}-i.{shop_id}.{item_id}"
+# Default Affiliate ID
+DEFAULT_AFFILIATE_ID = "11316621772"
 
-def run_scraping_process(keyword, limit_target):
+def generate_shopee_product_url(shop_id, item_id):
+    """
+    Membuat URL Produk Shopee dengan format standar:
+    https://shopee.co.id/product/{shop_id}/{item_id}
+    """
+    return f"https://shopee.co.id/product/{shop_id}/{item_id}"
+
+def convert_to_shopee_affiliate(product_url: str, affiliate_id: str) -> str:
+    """
+    Mengonversi URL produk Shopee biasa menjadi URL Affiliate menggunakan endpoint an_redir.
+    """
+    clean_affiliate_id = str(affiliate_id).replace("an_", "").strip()
+    encoded_url = urllib.parse.quote(product_url, safe="")
+    return f"https://s.shopee.co.id/an_redir?origin_link={encoded_url}&affiliate_id={clean_affiliate_id}"
+
+def run_scraping_process(keyword, limit_target, affiliate_id=DEFAULT_AFFILIATE_ID):
     options = Options()
     options.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
     
@@ -185,7 +190,7 @@ def run_scraping_process(keyword, limit_target):
     try:
         # 1. Pastikan tab berada di domain utama Shopee sebelum memanggil API
         current_url = driver.current_url.lower()
-        if "affiliate.shopee.co.id" in current_url or "shopee.co.id" not in current_url:
+        if "shopee.co.id" not in current_url:
             driver.get("https://shopee.co.id")
             time.sleep(2)
 
@@ -257,7 +262,7 @@ def run_scraping_process(keyword, limit_target):
                     totalShopReviews = shopData.response_count;
                 }
 
-                // Gambar: Ekstrak dari PDP images array, item_pdp_item, atau fallback Search API
+                // Gambar
                 let rawImage = p.image_search || "";
                 if (itemData.images && itemData.images.length > 0) {
                     rawImage = itemData.images[0];
@@ -267,7 +272,7 @@ def run_scraping_process(keyword, limit_target):
                 
                 let imageUrl = rawImage ? `https://down-id.img.susercontent.com/file/${rawImage}` : null;
 
-                // Terjual: Cek dari berbagai kemungkinan struktur JSON PDP / Search API
+                // Terjual
                 const totalTerjual = itemData.historical_sold || itemData.historical_sold_count || itemData.sold || p.historical_sold_search || 0;
 
                 // Total Ulasan Produk
@@ -280,7 +285,7 @@ def run_scraping_process(keyword, limit_target):
                     totalUlasanProduk = p.rating_count_search;
                 }
 
-                // Ekstrak Spesifikasi menjadi Key-Value rapi
+                // Ekstrak Spesifikasi menjadi Key-Value
                 let parsedSpecs = {};
                 if (Array.isArray(itemData.attributes)) {
                     itemData.attributes.forEach(attr => {
@@ -321,52 +326,15 @@ def run_scraping_process(keyword, limit_target):
         raw_results = driver.execute_script(js_parallel_fetch, raw_products)
         detailed_products = json.loads(raw_results) if raw_results else []
 
+        # 4. Generate Link Asli & Direct Convert ke Affiliate Link
         daftar_produk = []
         for dp in detailed_products:
-            dp['url_asli'] = generate_shopee_url(dp['judul'], dp['shop_id'], dp['item_id'])
-            dp['url_afiliasi'] = None
+            url_asli = generate_shopee_product_url(dp['shop_id'], dp['item_id'])
+            url_afiliasi = convert_to_shopee_affiliate(url_asli, affiliate_id)
+            
+            dp['url_asli'] = url_asli
+            dp['url_afiliasi'] = url_afiliasi
             daftar_produk.append(dp)
-
-        # 4. Konversi Link Afiliasi via Dashboard Shopee Affiliate
-        if daftar_produk:
-            try:
-                driver.get("https://affiliate.shopee.co.id/offer/custom_link")
-                time.sleep(0.2)
-
-                mass_input_text = "\n".join([prod['url_asli'] for prod in daftar_produk])
-
-                input_box = WebDriverWait(driver, 5).until(
-                    EC.element_to_be_clickable((By.XPATH, '//textarea | //input[@type="text"]'))
-                )
-                input_box.clear()
-                input_box.send_keys(mass_input_text)
-                time.sleep(0.4)
-
-                btn_convert = WebDriverWait(driver, 5).until(
-                    EC.element_to_be_clickable((By.XPATH, '//button[contains(., "Link") or contains(., "Dapatkan")]'))
-                )
-                btn_convert.click()
-                time.sleep(0.3)
-
-                link_elem = WebDriverWait(driver, 5).until(
-                    EC.presence_of_element_located((By.XPATH, '//textarea[contains(., "s.shopee.co.id")] | //input[contains(@value, "s.shopee.co.id")]'))
-                )
-                
-                raw_text = link_elem.get_attribute('value') or link_elem.text
-                extracted_links = [line.strip() for line in raw_text.split('\n') if line.strip()]
-
-                for idx, prod in enumerate(daftar_produk):
-                    if idx < len(extracted_links):
-                        match = re.search(r'(https://s\.shopee\.co\.id/[A-Za-z0-9_-]+)', extracted_links[idx])
-                        prod['url_afiliasi'] = match.group(1) if match else extracted_links[idx]
-            except Exception:
-                pass
-
-        # 5. Kembalikan tab ke domain utama shopee.co.id
-        try:
-            driver.get("https://shopee.co.id")
-        except Exception:
-            pass
 
         print(json.dumps(daftar_produk, ensure_ascii=False))
 
@@ -376,5 +344,6 @@ def run_scraping_process(keyword, limit_target):
 if __name__ == "__main__":
     keyword_input = sys.argv[1] if len(sys.argv) > 1 else "ram ddr4"
     limit_input = int(sys.argv[2]) if len(sys.argv) > 2 else 3
+    affiliate_input = sys.argv[3] if len(sys.argv) > 3 else DEFAULT_AFFILIATE_ID
     
-    run_scraping_process(keyword_input, limit_input)
+    run_scraping_process(keyword_input, limit_input, affiliate_input)
